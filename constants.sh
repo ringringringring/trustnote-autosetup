@@ -1,0 +1,5 @@
+export source_path="$HOME/mainchain"
+export testnet_builder_path="$source_path/testnet-builder"
+export testnet_builder_data="$testnet_builder_path/data"
+export trustnote_headless_path="$testnet_builder_path/trustnote-headless"
+export config_path="$HOME/.config"

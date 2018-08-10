@@ -1,0 +1,57 @@
+import os
+import json
+import platform
+
+class Tools:
+    """common tool functions."""
+
+    def __init__(self):
+        return
+
+    @staticmethod
+    def run_shell_command(command):
+        Tools.log("command: {0}".format(command))
+        os.system(command)
+
+    @staticmethod
+    def run_shell_cd(path):
+        Tools.log("command: cd {0}".format(path))
+        os.chdir(path)
+
+    @staticmethod
+    def log(message):
+        print(message)
+
+    @staticmethod
+    def read_file(path):
+        text = ""
+        with open(path) as content:
+             text = content
+
+        return text
+
+    @staticmethod
+    def read_file_to_json(path):
+        text = []
+        with open(path) as content:
+             text = json.load(content)
+
+        return text
+    
+    @staticmethod
+    def current_paltform():
+        platform_value = platform.platform()
+        if ( "Windows" in platform_value ):
+            return "Windows"
+        elif ( "Linux" in platform_value ):
+            return "Linux"
+        else:
+            return "Unkown"
+
+    @staticmethod
+    def cross_platfrom_path(path):
+        platform_value = Tools.current_paltform()
+        if ( platform_value != "Windows" ):
+            return path.replace("\\", "/")
+        
+        return path.replace("/", "\\")
