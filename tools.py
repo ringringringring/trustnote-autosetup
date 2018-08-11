@@ -1,6 +1,7 @@
 import os
 import json
 import platform
+import subprocess
 
 class Tools:
     """common tool functions."""
@@ -12,6 +13,12 @@ class Tools:
     def run_shell_command(command):
         Tools.log("command: {0}".format(command))
         os.system(command)
+    
+    @staticmethod
+    def run_shell_command_with_output(command):
+        result = subprocess.run(command, stdout=subprocess.PIPE)
+        Tools.log("command: {0}".format(command))
+        return result.stdout.decode('utf-8')
 
     @staticmethod
     def run_shell_cd(path):

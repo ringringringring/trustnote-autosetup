@@ -4,7 +4,7 @@ git_extension=".git"
 source_path="$HOME/mainchain/"
 
 load_project_source(){
-    currentpath=$source_path$1$2/
+    current_path=$source_path$1$2/
     mkdir "$current_path"
     git clone "$github_host$2$git_extension" "$current_path"
 
