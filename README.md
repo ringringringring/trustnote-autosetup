@@ -1,2 +1,2 @@
 # trustnote-autosetup
-This is an trustnote automation setup project
+This is a trustnote automation setup project
