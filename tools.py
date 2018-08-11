@@ -44,6 +44,18 @@ class Tools:
              text = json.load(content)
 
         return text
+
+    @staticmethod
+    def read_file_to_lines(path):
+        lines = []
+        with open(path, 'r', encoding='UTF-8') as f:
+            lines = f.readlines()
+        return lines
+
+    @staticmethod
+    def write_file_in_lines(path, lines):
+        with open(path, 'w', encoding='UTF-8') as f:
+            f.writelines(lines)
     
     @staticmethod
     def current_paltform():
