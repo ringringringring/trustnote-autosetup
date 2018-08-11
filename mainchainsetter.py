@@ -2,8 +2,8 @@ import json
 
 from tools import Tools
 
-#home_path = "/home/houfa"
-home_path = "D:\\Code\\ThingTrust"
+home_path = "/home/houfa"
+#home_path = "D:\\Code\\ThingTrust"
 source_path = "{0}/mainchain".format(home_path)
 testnet_builder_path = "{0}/testnet-builder".format(source_path)
 testnet_builder_data_path = "{0}/data".format(testnet_builder_path)
@@ -36,7 +36,7 @@ class MainChainSetter:
         return
 
     def load_code(self):
-        Tools.run_shell_command("sudo {0}/loadcode.sh".format(shell_path))
+        Tools.run_shell_command("{0}/loadcode.sh".format(shell_path))
         return
     
     def generate_configs(self):
@@ -70,31 +70,8 @@ class MainChainSetter:
         }
 
         path = "{0}/create_genesis.js".format(trustnote_headless_play_path)
-        lines = Tools.read_file_to_lines(path)
-
-        for index in range(len(lines)):
-            for key in modify_dictionary.keys():
-                if modify_dictionary[key] in lines[index]:
-                    lines[index] = lines[index].replace(key, modify_dictionary[key])
-                    Tools.log("Changed value from:{0} to :{1}".format(key, modify_dictionary[key]))
-
-        #index = 0
-        #while (index < len(lines)):
-        #    if "require('trustnote-headless')" in lines[index].replace("\"", "'"):
-        #        lines[index] = lines[index].replace("trustnote-headless", "../start")
-        #    elif old_first_utxo in lines[index]:
-        #        lines[index] = lines[index].replace(old_first_utxo, self.first_utxo)
-        #        Tools.log("changed old_first_utxo:{0} to new first_utxo:{1}".format(old_first_utxo, self.first_utxo))
-        #    elif old_from_address in lines[index]:
-        #        lines[index] = lines[index].replace(old_from_address, self.from_address)
-        #        Tools.log("changed old_from_address:{0} to new from_address:{1}".format(old_from_address, self.from_address))
-        #    elif old_payee_address in lines[index]:
-        #        lines[index] = lines[index].replace(old_payee_address, self.payee_address)
-        #        Tools.log("changed old_payee_address:{0} to new payee_address:{1}".format(old_payee_address, self.payee_address))
-        #    index = index + 1
-
-        Tools.write_file_in_lines(path, lines)
-
+        Tools.file_lines_replacer(path, modify_dictionary)
+        
         return
 
     def create_genesis(self):

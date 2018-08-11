@@ -53,6 +53,19 @@ class Tools:
         return lines
 
     @staticmethod
+    def file_lines_replacer(path, modify_dictionary):
+        lines = Tools.read_file_to_lines(path)
+
+        for index in range(len(lines)):
+            for key in modify_dictionary.keys():
+                if key in lines[index]:
+                    lines[index] = lines[index].replace(key, modify_dictionary[key])
+                    Tools.log("Changed value from:{0} to :{1}".format(key, modify_dictionary[key]))
+
+        Tools.write_file_in_lines(path, lines)
+        return
+
+    @staticmethod
     def write_file_in_lines(path, lines):
         with open(path, 'w', encoding='UTF-8') as f:
             f.writelines(lines)
