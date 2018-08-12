@@ -13,3 +13,4 @@ cd $HOME
 
 mkdir "$config_path/headless15"
 cp -r "$testnet_builder_data/headless15/"* "$config_path/headless15"
+chown -R houfa:houfa "$config_path/headless15"
