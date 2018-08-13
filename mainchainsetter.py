@@ -157,8 +157,8 @@ class MainChainSetter:
 
         #update peers
         peers_modify_dictionary = { 
-            "\'wss://victor.trustnote.org/tn\'," : "\'{0}\',".format(self.peers[0]),
-            "\'wss://eason.trustnote.org/tn\'," : "\'{0}\'".format(self.peers[1]),
+            "\'wss://victor.trustnote.org/tn\'," : "\'{0}://{1}\',".format(self.protocol, self.peers[0]),
+            "\'wss://eason.trustnote.org/tn\'," : "\'{0}://{1}\'".format(self.protocol, self.peers[1]),
             "\'wss://lymn.trustnote.org/tn\'," : "",
             "\'wss://bob.trustnote.org/tn\'," : "",
             "\'wss://curry.trustnote.org/tn\'," : "",
