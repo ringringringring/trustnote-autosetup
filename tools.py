@@ -1,6 +1,7 @@
 import os
 import json
 import platform
+import sqlite3
 import subprocess
 
 class Tools:
@@ -73,6 +74,15 @@ class Tools:
     def write_file_in_lines(path, lines):
         with open(path, 'w', encoding='UTF-8') as f:
             f.writelines(lines)
+
+    @staticmethod
+    def execute_sqlite_sql(path, sql):
+        conn = sqlite3.connect(path)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        conn.close()
+        return data
     
     @staticmethod
     def current_paltform():

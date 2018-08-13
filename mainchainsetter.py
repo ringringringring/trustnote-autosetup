@@ -51,7 +51,7 @@ class MainChainSetter:
     def create_genesis(self):
         self.setup_create_genesis()
 
-        Tools.log("----Please press [enter] after 5s.----")
+        Tools.log("----Please press [Enter] after 10s.----")
         Tools.run_shell_command("rm -f {0}/headless15/trustnote*".format(config_path))
         Tools.run_shell_cd(trustnote_headless_play_path)
         output = Tools.run_shell_command_with_output("node create_genesis.js")
@@ -63,16 +63,19 @@ class MainChainSetter:
         self.update_genesis()
         self.update_witnesses()
 
-        Tools.run_shell_command("cp {0}/hub-conf.js {1}/conf.js".format(configs_files_path, trustnote_hub_path))
-        Tools.run_shell_command("cp {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, trustnote_hub_path))
-
         return
 
     def setup_hub(self, index, protocol, port):
         current_project_path = "{0}{1}".format(trustnote_hub_path, index)
-
+        
+        #remove .config hub data
+        Tools.run_shell_command("rm -R {0}/hub{1}".format(config_path, index))
+        
         self.copy_project(trustnote_hub_path, current_project_path)
         self.update_package_name("trustnote-hub", "hub{0}".format(index), current_project_path)
+
+        Tools.run_shell_command("cp -f {0}/hub-conf.js {1}/conf.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, current_project_path))
 
         #update protocol
         protocol_modify_dictionary = { 
@@ -94,7 +97,7 @@ class MainChainSetter:
         }
         Tools.file_lines_replacer("{0}/conf.js".format(current_project_path), peers_modify_dictionary)
 
-        Tools.run_shell_command("pm2 start {0}/start.js --name hub{1}".format(current_project_path, index))
+        self.pm2_delete_and_restart("hub{0}".format(index), "{0}/start.js".format(current_project_path))
 
         return
 
@@ -110,21 +113,23 @@ class MainChainSetter:
         self.update_package_name("trustnote-witness", "witness{0}".format(index), current_project_path)
         
         #copy files from configs files
+        Tools.run_shell_command("rm -R {0}/witness{1}".format(config_path, index))
         Tools.run_shell_command("cp -R {0}/witness{1} {2}/".format(testnet_builder_data_path, index, config_path))
-        Tools.run_shell_command("cp {0}/witness-conf.js {1}/conf.js".format(configs_files_path, current_project_path))
-        Tools.run_shell_command("cp {0}/witness-start.js {1}/start.js".format(configs_files_path, current_project_path))
-        Tools.run_shell_command("cp {0}/witness-headless-start.js {1}/node_modules/trustnote-headless/start.js".format(configs_files_path, current_project_path))
-        Tools.run_shell_command("cp {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/witness-conf.js {1}/conf.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/witness-start.js {1}/start.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/witness-headless-start.js {1}/node_modules/trustnote-headless/start.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, current_project_path))
 
         #update conf.js
         conf_modify_dictionary = { 
             "newton.trustnote.org/tn" : hub_url,
-            "wss://" : "{0}://".format(self.protocol)
+            "wss://" : "{0}://".format(self.protocol),
+            "exports.hub = '127.0.0.1:6616'" : "exports.hub = '{0}'".format(hub_url)
         }
         Tools.file_lines_replacer("{0}/conf.js".format(current_project_path), conf_modify_dictionary)
         Tools.file_lines_replacer("{0}/node_modules/trustnote-common/conf.js".format(current_project_path), conf_modify_dictionary)
 
-        Tools.run_shell_command("pm2 start {0}/start.js --name witness{1}".format(trustnote_witness_path, index))
+        self.pm2_delete_and_restart("witness{0}".format(index), "{0}/start.js".format(current_project_path))
 
         return
 
@@ -138,6 +143,8 @@ class MainChainSetter:
 
     def setup_explorer(self, index, hub_url):
         current_project_path = "{0}{1}".format(trustnote_explorer_path, index)
+
+        Tools.run_shell_command("rm -R {0}/explorer{1}".format(config_path, index))
 
         self.copy_project(trustnote_explorer_path, current_project_path)
         self.update_package_name("trustnote-explorer", "explorer{0}".format(index), current_project_path)
@@ -159,7 +166,7 @@ class MainChainSetter:
         }
         Tools.file_lines_replacer("{0}/conf.js".format(current_project_path), peers_modify_dictionary)
 
-        Tools.run_shell_command("pm2 start {0}/explorer.js --name explorer{1}".format(current_project_path, index))
+        self.pm2_delete_and_restart("explorer{0}".format(index), "{0}/explorer.js".format(current_project_path))
 
         return
 
@@ -170,8 +177,13 @@ class MainChainSetter:
     def setup_headless(self, index):
         current_project_path = "{0}{1}".format(trustnote_headless_path, index)
 
+        Tools.run_shell_command("rm -R {0}/headless{1}".format(config_path, index))
+
         self.copy_project(trustnote_headless_path, current_project_path)
         self.update_package_name("trustnote-headless", "headless{0}".format(index), current_project_path)
+
+        #replace start.js
+        Tools.run_shell_command("cp -f {0}/witness-headless-start.js {1}/start.js".format(configs_files_path, current_project_path))
 
         #update conf.js
         conf_modify_dictionary = { 
@@ -182,15 +194,33 @@ class MainChainSetter:
         Tools.file_lines_replacer("{0}/node_modules/trustnote-common/conf.js".format(current_project_path), conf_modify_dictionary)
         
         #copy created headless data to .config
-        Tools.run_shell_command("cp {0}/headless{1}/* {2}/".format(testnet_builder_data_path, index, config_path))
+        Tools.run_shell_command("cp -R {0}/headless{1} {2}/".format(testnet_builder_data_path, index, config_path))
 
-        Tools.run_shell_command("pm2 start {0}/start.js --name headless{1}".format(current_project_path, index))
+        self.pm2_delete_and_restart("headless{0}".format(index), "{0}/start.js".format(current_project_path))
 
         return
 
     def setup_headlesses(self):
         for index in range(13, 16):
             self.setup_headless(index)
+        return
+
+    def create_payment(self):
+        start_headless_index = self.find_start_headless_index()
+
+        for index in range(13, 16):
+            self.pm2_stop_proccess("headless{0}".format(index))
+        
+        current_project_path = "{0}{1}".format(trustnote_headless_path, start_headless_index)
+
+        payment_modify_dictionary = { 
+            "PYQJWUWRMUUUSUHKNJWFHSR5OADZMUYR" : self.headless_addresses[0],
+            "LS3PUAGJ2CEYBKWPODVV72D3IWWBXNXO" : self.headless_addresses[1]
+        }
+        Tools.file_lines_replacer("{0}/play/create_payment.js".format(current_project_path), payment_modify_dictionary)
+
+        Tools.run_shell_command("node {0}/play/create_payment.js".format(current_project_path))
+
         return
 
     def generate_configs(self):
@@ -258,7 +288,7 @@ class MainChainSetter:
         return
 
     def copy_project(self, project_full_name, project_short_name):
-        Tools.run_shell_command("cp -R {0} {1}".format(project_full_name, project_short_name))
+        Tools.run_shell_command("cp -R {0}/ {1}".format(project_full_name, project_short_name))
         return
 
     def update_package_name(self, project_full_name, project_short_name, project_path):
@@ -266,18 +296,45 @@ class MainChainSetter:
         Tools.file_lines_replacer("{0}/package.json".format(project_path), name_modify_dictionary)
         return
 
-    def read_headless_address(self):
+    def read_headless_address(self, name):
+        data = Tools.execute_sqlite_sql("{0}/{1}/trustnote.sqlite".format(config_path, name), "select address from my_addresses limit 1;")
+        if data is None:
+            Tools.log("{0} do not have address!".format(name))
+            return ""
+
+        address = data[0][0]
+        Tools.log("{0} address is {1}".format(name, address))
+        return address
+    
+    def find_start_headless_index(self):
+        for index in range(13, 16):
+            address = self.read_headless_address("headless{0}".format(index))
+            if address == self.headless_addresses[0]:
+                return index
+
+        Tools.log("Can not find start headless!")
+        return  ""
+    
+    def pm2_delete_and_restart(self, name, start_path):
+        Tools.run_shell_command("pm2 stop {0}".format(name))
+        Tools.run_shell_command("pm2 delete {0}".format(name))
+        Tools.run_shell_command("pm2 start {0} --name {1}".format(start_path, name))
+        return
+    
+    def pm2_stop_proccess(self, name):
+        Tools.run_shell_command("pm2 stop {0}".format(name))
         return
 
 try:
     main_chain_setter = MainChainSetter()
     #main_chain_setter.setup_os_env()
-    #main_chain_setter.load_code()
+    main_chain_setter.load_code()
     main_chain_setter.create_genesis()
     main_chain_setter.setup_hubs()
     main_chain_setter.setup_witnesses()
     main_chain_setter.setup_exploreres()
     main_chain_setter.setup_headlesses()
+    main_chain_setter.create_payment()
     
 except Exception as error:
     Tools.log(error)
