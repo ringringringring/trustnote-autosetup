@@ -3,6 +3,7 @@ import json
 import platform
 import sqlite3
 import subprocess
+import time
 
 class Tools:
     """common tool functions."""
@@ -17,13 +18,11 @@ class Tools:
     
     @staticmethod
     def run_shell_command_with_output(command):
-        #result = subprocess.run(command, stdout=subprocess.PIPE)
-        #Tools.log("command: {0}".format(command))
+        Tools.log("command: {0}".format(command))
         process = os.popen(command)
         output = process.read()
         process.close()
         return output
-        #return result.stdout.decode('utf-8')
 
     @staticmethod
     def run_shell_cd(path):
@@ -32,6 +31,7 @@ class Tools:
 
     @staticmethod
     def log(message):
+        Tools.append_file("main_chain_setter.log", "[{0}]{1}\n".format(time.strftime("%Y-%m-%d %H:%M:%S"), message))
         print(message)
 
     @staticmethod
@@ -74,6 +74,11 @@ class Tools:
     def write_file_in_lines(path, lines):
         with open(path, 'w', encoding='UTF-8') as f:
             f.writelines(lines)
+    
+    @staticmethod
+    def append_file(path, content):
+        with open(path, 'a+', encoding='UTF-8') as f:
+            f.write(content)
 
     @staticmethod
     def execute_sqlite_sql(path, sql):

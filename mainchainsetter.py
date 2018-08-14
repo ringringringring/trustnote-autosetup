@@ -46,17 +46,14 @@ class MainChainSetter:
 
     def load_code(self):
         Tools.run_shell_command("{0}/loadcode.sh".format(shell_path))
+        Tools.run_shell_command("cp -R {0} {1}_backup".format(testnet_builder_path, testnet_builder_path))
         return
 
     def create_genesis(self):
         self.setup_create_genesis()
 
-        Tools.log("----Please press [Enter] after 10s.----")
         Tools.run_shell_command("rm -f {0}/headless15/trustnote*".format(config_path))
-        Tools.run_shell_cd(trustnote_headless_play_path)
-        output = Tools.run_shell_command_with_output("node create_genesis.js")
-        Tools.run_shell_cd(home_path)
-        Tools.log(output)
+        output = self.execute_genesis()
 
         self.gensis_unit = self.read_genesis_unit(output)
         Tools.log("Gensis unit is {0}".format(self.gensis_unit))
@@ -64,6 +61,21 @@ class MainChainSetter:
         self.update_witnesses()
 
         return
+    
+    def execute_genesis(self, need_output = True):      
+        output = ""
+
+        Tools.run_shell_cd(trustnote_headless_play_path)
+        if (need_output):
+            Tools.log("----Please press [Enter] after 10s.----")
+            output = Tools.run_shell_command_with_output("node create_genesis.js")
+        else:
+            Tools.run_shell_command("pm2 start create_genesis.js --name create_genesis")
+
+        Tools.run_shell_cd(home_path)
+        Tools.log(output)
+
+        return output
 
     def setup_hub(self, index, protocol, port):
         current_project_path = "{0}{1}".format(trustnote_hub_path, index)
@@ -149,8 +161,8 @@ class MainChainSetter:
         self.copy_project(trustnote_explorer_path, current_project_path)
         self.update_package_name("trustnote-explorer", "explorer{0}".format(index), current_project_path)
 
-        Tools.run_shell_command("cd {0}/explorer-conf.js {1}/conf.js".format(configs_files_path, current_project_path))
-        Tools.run_shell_command("cd {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/explorer-conf.js {1}/conf.js".format(configs_files_path, current_project_path))
+        Tools.run_shell_command("cp -f {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, current_project_path))
 
         initial_peers_modify_dictionary = { "exports.webPort = 6000" : "exports.webPort = {0}".format(web_port) }
         Tools.file_lines_replacer("{0}/conf.js".format(current_project_path), initial_peers_modify_dictionary)
@@ -174,13 +186,14 @@ class MainChainSetter:
         self.setup_explorer(1, self.peers[0])
         return
 
-    def setup_headless(self, index):
+    def setup_headless(self, index, star_now = True):
         current_project_path = "{0}{1}".format(trustnote_headless_path, index)
 
         Tools.run_shell_command("rm -R {0}/headless{1}".format(config_path, index))
 
         self.copy_project(trustnote_headless_path, current_project_path)
         self.update_package_name("trustnote-headless", "headless{0}".format(index), current_project_path)
+        self.update_package_name("headless15", "headless{0}".format(index), "{0}/play/".format(current_project_path))
 
         #replace start.js
         Tools.run_shell_command("cp -f {0}/witness-headless-start.js {1}/start.js".format(configs_files_path, current_project_path))
@@ -196,7 +209,10 @@ class MainChainSetter:
         #copy created headless data to .config
         Tools.run_shell_command("cp -R {0}/headless{1} {2}/".format(testnet_builder_data_path, index, config_path))
 
-        self.pm2_delete_and_restart("headless{0}".format(index), "{0}/start.js".format(current_project_path))
+        Tools.run_shell_command("cp -f {0}/constants.js {1}/node_modules/trustnote-common/constants.js".format(configs_files_path, current_project_path))
+
+        if (star_now):
+            self.pm2_delete_and_restart("headless{0}".format(index), "{0}/start.js".format(current_project_path))
 
         return
 
@@ -268,7 +284,7 @@ class MainChainSetter:
         return
     
     def update_witnesses(self):
-        modify_dictionary = { 
+        hub_modify_dictionary = { 
             "5SGHGVDCY4BO5DKNC5L2TOCAKFNATB5V" : self.witness_addresses[0],
             "5Y7QZSQNKYS5SJVXE47YGQ35FG5JJMXN" : self.witness_addresses[1],
             "AWIA2BFATICIWVVHVCU2N4WZXHP4CD7G" : self.witness_addresses[2],
@@ -283,8 +299,23 @@ class MainChainSetter:
             "WJ66AZLXSTPOZNHFBP4HCZYJ6HHY3FNI" : self.witness_addresses[11]
         }
 
-        Tools.file_lines_replacer("{0}/hub-conf.js".format(configs_files_path), modify_dictionary)
-        Tools.file_lines_replacer("{0}/explorer-conf.js".format(configs_files_path), modify_dictionary)
+        explorer_modify_dictionary = { 
+            "33W273QG2Z3F6TMYTDGFZG3ETKZPG5G7" : self.witness_addresses[0],
+            "4CQKRXPMH4HCXC4RB6R2DUHV2RZ2XCGE" : self.witness_addresses[1],
+            "77OGV47LWHRPEMHW2CO77XIWUTJYGGUN" : self.witness_addresses[2],
+            "7THHGJB2JW6UWYJUGNRX4GXBL4IP5YXF" : self.witness_addresses[3],
+            "DXOQJKBLBT7AWQTKD64SZZ5RNZXXVLB6" : self.witness_addresses[4],
+            "GHUSYNBMZDFPBH3YDAA3TH5LHYU3C2JX" : self.witness_addresses[5],
+            "T4TBEYOLJMXIDFXDM7MLT7QO3E2ZLN3V" : self.witness_addresses[6],
+            "VCPSKSESM2XOARXSFEF5EWFL3T4T5DFT" : self.witness_addresses[7],
+            "VVMXCDZJK5FDYHIRFCBIMDTPIBLI5I32" : self.witness_addresses[8],
+            "R62HF6RQFPC2NLZ5AWJUWSEQOWYDJGJV" : self.witness_addresses[9],
+            "X5QJ6JA26DDKDJJF7CGMT64IX25R5M3T" : self.witness_addresses[10],
+            "XE7RSUABVNPDIS5CM4KJTQ3ZRFP7WTFN" : self.witness_addresses[11]
+        }
+
+        Tools.file_lines_replacer("{0}/hub-conf.js".format(configs_files_path), hub_modify_dictionary)
+        Tools.file_lines_replacer("{0}/explorer-conf.js".format(configs_files_path), explorer_modify_dictionary)
         return
 
     def copy_project(self, project_full_name, project_short_name):
@@ -325,16 +356,27 @@ class MainChainSetter:
         Tools.run_shell_command("pm2 stop {0}".format(name))
         return
 
+    def pm2_delete_all(self, name, start_path):
+        Tools.run_shell_command("pm2 stop all")
+        Tools.run_shell_command("pm2 delete all")
+        return
+
 try:
+    Tools.log("----------Start setup main chain----------")
     main_chain_setter = MainChainSetter()
     #main_chain_setter.setup_os_env()
     main_chain_setter.load_code()
+    #main_chain_setter.pm2_delete_all()
     main_chain_setter.create_genesis()
     main_chain_setter.setup_hubs()
     main_chain_setter.setup_witnesses()
+    main_chain_setter.setup_headless(15, False)
+    main_chain_setter.execute_genesis(False)
     main_chain_setter.setup_exploreres()
     main_chain_setter.setup_headlesses()
     main_chain_setter.create_payment()
+
+    Tools.log("----------Setting main chain finished----------")
     
 except Exception as error:
     Tools.log(error)

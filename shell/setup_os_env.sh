@@ -23,6 +23,6 @@ python get-pip.py
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 apt-get install -y nodejs
 apt-get install -y build-essential
-apt-get install sqlite3
+apt-get install -y sqlite3
 #npm i -g npm #do not excute this upgrade, this will make "npm install sqlite3" failed, and current version is 5.6.0
-npm install -g pm2
+npm install -y -g pm2
